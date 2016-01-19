@@ -21,7 +21,7 @@ make
 
 One-liner:
 ```bash
-curl -sSL https://raw.githubusercontent.com/brettlangdon/git-vendor/master/install.sh | sudo bash /dev/stdin
+curl -sSL https://git.io/vz8AK | sudo bash /dev/stdin
 ```
 
 ## Example
