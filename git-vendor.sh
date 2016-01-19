@@ -2,7 +2,7 @@
 #
 # git-vendor.sh: manage vendored repos via git-subtree
 #
-# Copyright (C) 2016 Brett Langdon <me@brett.is>
+# Copyright (c) 2016 Brett Langdon <me@brett.is>
 #
 if [ $# -eq 0 ];
 then
