@@ -38,6 +38,23 @@ case "$command" in
     *) die "Unknown command '$command'" ;;
 esac
 
+vendor_dirs_from_log()
+{
+    dir=
+    git log --grep="^git-vendor-dir: vendor/.*\$" \
+	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+		git-vendor-dir:) dir="$b" ;;
+		END)
+                    echo "$dir"
+                    dir=
+                    ;;
+	    esac
+	done
+}
+
 cmd_add()
 {
     repository="$1"
@@ -51,20 +68,73 @@ cmd_add()
     message="\
 Add '$dir/' from '$repository $ref'
 
-git-subtree-repository: $repository
-git-subtree-ref: $ref
+git-vendor-dir: $dir
+git-vendor-repository: $repository
+git-vendor-ref: $ref
 "
-    git subtree add --prefix "$dir" --message "$message" "$repository" "$ref"
+    git subtree add --prefix "$dir" --message "$message" "$repository" "$ref" --squash
 }
 
 cmd_list()
 {
-    die "Not implemented"
+    vendorDirs=($(vendor_dirs_from_log | sort -u))
+    for dir in "${vendorDirs[@]}";
+    do
+    git log -1 --grep="^git-vendor-dir: $dir\$" \
+	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+	while read a b junk; do
+	    case "$a" in
+		START) commit="$b" ;;
+                git-vendor-dir:) dir="$b" ;;
+                git-vendor-ref:) ref="$b" ;;
+		git-vendor-repository:) repository="$b" ;;
+		END)
+                    if [[ ! -z "$repository" ]];
+                    then
+                        echo "$dir"
+                        echo "\tcommit:\t$commit"
+                        echo "\tdir:\t$dir"
+                        echo "\tref:\t$ref"
+                        echo "\trepo:\t$repository"
+                        echo ""
+                    fi
+                    dir=
+                    ref=
+                    commit=
+                    repository=
+                    ;;
+	    esac
+	done
+    done;
+
 }
 
 cmd_update()
 {
-    die "Not implemented"
+    dir="$1"
+    ref="$2"
+    git log --grep="^git-vendor-dir: $dir\$" \
+	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+		git-vendor-repository:) repository="$b" ;;
+		END)
+                    if [[ ! -z "$repository" ]];
+                    then
+                        message="\
+Update '$dir/' from '$repository $ref'
+
+git-vendor-dir: $dir
+git-vendor-repository: $repository
+git-vendor-ref: $ref
+"
+                        git subtree pull --prefix "$dir" --message "$message" "$repository" "$ref" --squash
+                        break
+                    fi
+                    ;;
+	    esac
+	done
 }
 
 "cmd_$command" "$@"
