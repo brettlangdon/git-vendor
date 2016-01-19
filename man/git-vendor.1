@@ -1,0 +1,106 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "GIT\-VENDOR" "1" "January 2016" "" ""
+.
+.SH "NAME"
+\fBgit\-vendor\fR \- manage vendored dependency subtrees
+.
+.SH "SYNOPSIS"
+\fBgit\-vendor add <repository> <ref>\fR
+.
+.P
+\fBgit\-vendor list\fR
+.
+.P
+\fBgit\-vendor update <dir> <ref>\fR
+.
+.SH "DESCRIPTION"
+Manage any repository dependencies under \fB/vendor/<repository>\fR with \fBgit\-subtree\fR\.
+.
+.P
+\fBgit\-vendor\fR is unable to \fBlist\fR or \fBupdate\fR any dependencies it has not added, the reason is that \fBgit\-vendor\fR adds special commit messages so that it can track existing dependencies\.
+.
+.SH "COMMANDS"
+add <repository> <ref>
+.
+.P
+Add a new vendored dependency
+.
+.P
+list
+.
+.P
+List all existing vendored dependencies and their current version
+.
+.P
+update <dir> <ref>
+.
+.P
+Update the vendored dependency to a different version
+.
+.SH "OPTIONS"
+<repository>
+.
+.P
+The repository url to vendor\. e\.g\. \fBhttps://github\.com/<username>/<repo\-name>\fR (supports \fBhttp://\fR, \fBhttps://\fR \fBgit://\fR and \fBgit@\fR protocols)\.
+.
+.P
+<ref>
+.
+.P
+The ref to vendor\. e\.g\. \fBmaster\fR, \fBv1\.0\.2\fR, etc
+.
+.P
+<dir>
+.
+.P
+The vendor directory for the dependency\. e\.g\. \fBvendor/github\.com/<username>/<repo\-name>\fR\.
+.
+.SH "EXAMPLES"
+Adding a new dependency:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor add https://github\.com/brettlangdon/forge v0\.1\.4
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Updating an existing dependency:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor update vendor/github\.com/brettlangdon/forge v0\.1\.7
+.
+.fi
+.
+.IP "" 0
+.
+.P
+List all existing dependencies:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor list
+.
+.fi
+.
+.IP "" 0
+.
+.SH "AUTHOR"
+Written by Brett Langdon \fIme@brett\.is\fR
+.
+.SH "REPORTING BUGS"
+<\fIhttps://github\.com/brettlangdon/git\-vendor/issues\fR>
+.
+.SH "SEE ALSO"
+<\fIhttps://github\.com/brettlangdon/git\-vendor\fR>

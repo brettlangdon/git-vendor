@@ -11,8 +11,17 @@ A work in progress git command for managing golang vendor dependencies.
 * `git vendor update <dir> <ref>` - update a vendored dependency to `<ref>`.
 
 ## Installation
+Manually:
+
 ```bash
-(wget -O /usr/local/bin/git-vendor https://raw.githubusercontent.com/brettlangdon/git-vendor/master/git-vendor && chmod +x /usr/local/bin/git-vendor)
+git clone https://github.com/brettlangdon/git-vendor
+cd ./git-vendor
+make
+```
+
+One-liner:
+```bash
+curl -sSL https://raw.githubusercontent.com/brettlangdon/git-vendor/master/install.sh | sudo bash /dev/stdin
 ```
 
 ## Example
