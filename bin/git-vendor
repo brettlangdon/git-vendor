@@ -4,38 +4,30 @@
 #
 # Copyright (c) 2016 Brett Langdon <me@brett.is>
 #
-if [ $# -eq 0 ];
-then
-    set -- -h
-fi
-
-OPTS_SPEC="\
-git vendor add <repository> <ref>
-git vendor list
-git vendor update <repository> <ref>
---
-"
-eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt -- "$@" || echo exit $?)"
+_usage()
+{
+    cat <<EOF
+Usage:
+  git vendor --help
+  git vendor add <repository> <ref>
+  git vendor list
+  git vendor update <repository> <ref>
+EOF
+}
 
 PATH=$PATH:$(git --exec-path)
 . git-sh-setup
-
 require_work_tree
 
-while [ $# -gt 0 ]; do
-	opt="$1"
-	shift
-	case "$opt" in
-		--) break ;;
-		*) die "Unexpected option: $opt" ;;
-	esac
-done
+case "$1" in
+    ""|"--help") _usage && exit ;;
+esac
 
 command="$1"
 shift
 case "$command" in
-    add|list|update) ;;
-    *) die "Unknown command '$command'" ;;
+    "add"|"list"|"update") ;;
+    *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
 esac
 
 vendor_dirs_from_log()
