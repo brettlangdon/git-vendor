@@ -1,14 +1,23 @@
 git-vendor
 ==========
-A work in progress git command for managing golang vendor dependencies.
+A git command for managing vendored dependencies.
 
 `git-vendor` is a wrapper around `git-subtree` commands for checking out and updating vendored dependencies.
 
+By default `git-vendor` conforms to the pattern used for vendoring golang dependencies:
+
+* Dependencies are stored under `vendor/` directory in the repo.
+* Dependencies are stored under the fully qualified project path.
+    * e.g. `https://github.com/brettlangdon/forge` will be stored under `vendor/github.com/brettlangdon/forge`.
+
+## Usage
+See https://brettlangdon.github.io/git-vendor for the current MAN page documentation.
+
 `git-vendor` provides the following commands:
 
-* `git vendor add <repository> <ref>` - add a new vendored dependency in `vendor/`
-* `git vendor list` - list all current vendored dependencies, their source, and current vendored ref.
-* `git vendor update <dir> <ref>` - update a vendored dependency to `<ref>`.
+* `git vendor add [--prefix <dir>] <name> <repository> [<ref>]` - add a new vendored dependency.
+* `git vendor list [<name>]` - list current vendored dependencies, their source, and current vendored ref.
+* `git vendor update <name> [<ref>]` - update a vendored dependency.
 
 ## Installation
 Manually:
@@ -21,14 +30,21 @@ make
 
 One-liner:
 ```bash
-curl -sSL https://git.io/vz8AK | sudo bash /dev/stdin
+curl -sSL https://git.io/vzN5m | sudo bash /dev/stdin
 ```
 
 ## Example
 
 ```bash
 $ # Checkout github.com/brettlangdon/forge@v0.1.6 under vendor/github.com/brettlangdon/forge
-$ git vendor add https://github.com/brettlangdon/forge v0.1.6
+$ git vendor add forge https://github.com/brettlangdon/forge v0.1.6
++ git subtree add --prefix vendor/github.com/brettlangdon/forge --message 'Add "forge" from "https://github.com/brettlangdon/forge@v0.1.6"
+
+git-vendor-name: forge
+git-vendor-dir: vendor/github.com/brettlangdon/forge
+git-vendor-repository: https://github.com/brettlangdon/forge
+git-vendor-ref: v0.1.6
+' https://github.com/brettlangdon/forge v0.1.6 --squash
 git fetch https://github.com/brettlangdon/forge v0.1.6
 warning: no common commits
 remote: Counting objects: 405, done.
@@ -38,21 +54,18 @@ Resolving deltas: 100% (227/227), done.
 From https://github.com/brettlangdon/forge
  * tag               v0.1.6     -> FETCH_HEAD
 Added dir 'vendor/github.com/brettlangdon/forge'
+
 $ # List current vendored dependencies
 $ git vendor list
-vendor/github.com/brettlangdon/forge
-	commit:	a7afbba3821d74c5b722c9195b954effa3d7420f
+forge@v0.1.6:
+	name:	forge
 	dir:	vendor/github.com/brettlangdon/forge
-	ref:	v0.1.6
 	repo:	https://github.com/brettlangdon/forge
+	ref:	v0.1.6
+	commit:	3335840c5f0ad9e821006588f1b16a3385d9c318
 
 $ # Update existing dependency to a newer version
-$ git vendor update vendor/github.com/brettlangdon/forge v0.1.7
-warning: no common commits
-remote: Counting objects: 411, done.
-remote: Total 411 (delta 0), reused 0 (delta 0), pack-reused 410
-Receiving objects: 100% (411/411), 68.91 KiB | 0 bytes/s, done.
-Resolving deltas: 100% (231/231), done.
+$ git vendor update forge v0.1.7
 From https://github.com/brettlangdon/forge
  * tag               v0.1.7     -> FETCH_HEAD
 Merge made by the 'recursive' strategy.
@@ -60,12 +73,14 @@ Merge made by the 'recursive' strategy.
  vendor/github.com/brettlangdon/forge/scanner.go    | 4 ++++
  vendor/github.com/brettlangdon/forge/test.cfg      | 1 +
  3 files changed, 7 insertions(+)
+
 $ # List current vendored dependencies
 $ git vendor list
-vendor/github.com/brettlangdon/forge
-	commit:	fcaa3c0cf3792fe3ad724c43d6db75f06fc5ecd5
+forge@v0.1.7:
+	name:	forge
 	dir:	vendor/github.com/brettlangdon/forge
-	ref:	v0.1.7
 	repo:	https://github.com/brettlangdon/forge
+	ref:	v0.1.7
+	commit:	071c5f108e0af39bf67a87fc766ea9bfb72b9ee7
 
 ```
