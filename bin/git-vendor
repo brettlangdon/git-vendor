@@ -9,9 +9,9 @@ _usage()
     cat <<EOF
 Usage:
   git vendor --help
-  git vendor add <repository> <ref>
-  git vendor list
-  git vendor update <repository> <ref>
+  git vendor add [--prefix <dir>] <name> <repository> [<ref>]
+  git vendor list [<name>]
+  git vendor update <name> [<ref>]
 EOF
 }
 
@@ -30,18 +30,25 @@ case "$command" in
     *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
 esac
 
-vendor_dirs_from_log()
+prefix="vendor"
+if [ "$1" == "--prefix" ]; then
+    prefix="$2"
+    shift; shift
+fi
+
+
+vendor_names_from_log()
 {
-    dir=
-    git log --grep="^git-vendor-dir: vendor/.*\$" \
+    name=
+    git log --grep="^git-vendor-name: .*\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
-		git-vendor-dir:) dir="$b" ;;
+		git-vendor-name:) name="$b" ;;
 		END)
-                    echo "$dir"
-                    dir=
+                    echo "$name"
+                    name=
                     ;;
 	    esac
 	done
@@ -49,47 +56,59 @@ vendor_dirs_from_log()
 
 cmd_add()
 {
-    repository="$1"
-    ref="$2"
-    if [ $# -ne 2 ];
+    name="$1"
+    repository="$2"
+    ref="master"
+    if [ "$3" != "" ]; then
+        ref="$3"
+    fi
+    if [ $# -lt 2 ];
     then
-        die "Incorrect options provided: git vendor add <repository> <ref>"
+        die "Incorrect options provided: git vendor add <name> <repository> [<ref>]"
     fi
 
-    dir="vendor/$(echo "$repository" | sed -E 's/^[a-zA-Z]+((:\/\/)|@)//' | sed 's/:/\//' | sed -E 's/\.git$//')"
+    dir="$prefix/$(echo "$repository" | sed -E 's/^[a-zA-Z]+((:\/\/)|@)//' | sed 's/:/\//' | sed -E 's/\.git$//')"
     message="\
-Add '$dir/' from '$repository $ref'
+Add \"$name\" from \"$repository@$ref\"
 
+git-vendor-name: $name
 git-vendor-dir: $dir
 git-vendor-repository: $repository
 git-vendor-ref: $ref
 "
+    set -x
     git subtree add --prefix "$dir" --message "$message" "$repository" "$ref" --squash
 }
 
 cmd_list()
 {
-    vendorDirs=($(vendor_dirs_from_log | sort -u))
-    for dir in "${vendorDirs[@]}";
+    showOnly="$1"
+    vendorNames=($(vendor_names_from_log | sort -u))
+    for name in "${vendorNames[@]}";
     do
-    git log -1 --grep="^git-vendor-dir: $dir\$" \
+    git log -1 --grep="^git-vendor-name: $name\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
 	while read a b junk; do
 	    case "$a" in
 		START) commit="$b" ;;
+                git-vendor-name:) name="$b" ;;
                 git-vendor-dir:) dir="$b" ;;
                 git-vendor-ref:) ref="$b" ;;
 		git-vendor-repository:) repository="$b" ;;
 		END)
                     if [[ ! -z "$repository" ]];
                     then
-                        echo "$dir"
-                        echo "\tcommit:\t$commit"
-                        echo "\tdir:\t$dir"
-                        echo "\tref:\t$ref"
-                        echo "\trepo:\t$repository"
-                        echo ""
+                        if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
+                            echo "$name@$ref:"
+                            echo "\tname:\t$name"
+                            echo "\tdir:\t$dir"
+                            echo "\trepo:\t$repository"
+                            echo "\tref:\t$ref"
+                            echo "\tcommit:\t$commit"
+                            echo ""
+                        fi
                     fi
+                    name=
                     dir=
                     ref=
                     commit=
@@ -103,20 +122,28 @@ cmd_list()
 
 cmd_update()
 {
-    dir="$1"
-    ref="$2"
-    git log --grep="^git-vendor-dir: $dir\$" \
+    name="$1"
+    ref="master"
+    if [ "$2" != "" ]; then
+        ref="$2"
+    fi
+    if [ $# -lt 1]; then
+        die "Incorrect options provided: git vendor upate <name> [<ref>]"
+    fi
+    git log -1 --grep="^git-vendor-name: $name\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
+                git-vendor-dir:) dir="$b" ;;
 		git-vendor-repository:) repository="$b" ;;
 		END)
                     if [[ ! -z "$repository" ]];
                     then
                         message="\
-Update '$dir/' from '$repository $ref'
+Update \"$name\" from \"$repository@$ref\"
 
+git-vendor-name: $name
 git-vendor-dir: $dir
 git-vendor-repository: $repository
 git-vendor-ref: $ref

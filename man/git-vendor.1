@@ -1,37 +1,40 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "GIT\-VENDOR" "1" "January 2016" "" ""
+.TH "GIT\-VENDOR" "1" "January 2016" "" "Git Vendor"
 .
 .SH "NAME"
 \fBgit\-vendor\fR \- manage vendored dependency subtrees
 .
 .SH "SYNOPSIS"
-\fBgit\-vendor add <repository> <ref>\fR
+\fBgit\-vendor add [\-\-prefix <dir>] <name> <repository> [<ref>]\fR
 .
 .P
-\fBgit\-vendor list\fR
+\fBgit\-vendor list [<name>]\fR
 .
 .P
-\fBgit\-vendor update <dir> <ref>\fR
+\fBgit\-vendor update <name> [<ref>]\fR
 .
 .SH "DESCRIPTION"
-Manage any repository dependencies under \fB/vendor/<repository>\fR with \fBgit\-subtree\fR\.
+Manage any repository dependencies with \fBgit\-subtree\fR\.
+.
+.P
+\fBgit\-vendor\fR follows the same vendoring pattern that is used in the Go community\. Dependencies are stored under \fBvendor/<repository_uri>\fR\. For example, the dependency of \fBhttps://github\.com/brettlangdon/forge\.git\fR will be stored under \fBvendor/github\.com/brettlangdon/forge\fR by default\.
 .
 .P
 \fBgit\-vendor\fR is unable to \fBlist\fR or \fBupdate\fR any dependencies it has not added, the reason is that \fBgit\-vendor\fR adds special commit messages so that it can track existing dependencies\.
 .
 .SH "COMMANDS"
-add <repository> <ref>
+add [\-\-prefix <dir>] <name> <repository> [<ref>]
 .
 .P
 Add a new vendored dependency
 .
 .P
-list
+list [\fIname\fR]
 .
 .P
-List all existing vendored dependencies and their current version
+List all existing vendored dependencies and their current version\. Limit show dependency to \fB<name>\fR if provided\.
 .
 .P
 update <dir> <ref>
@@ -40,6 +43,18 @@ update <dir> <ref>
 Update the vendored dependency to a different version
 .
 .SH "OPTIONS"
+\-\-prefix <dir>
+.
+.P
+Directory to pull dependencies in under (e\.g\. \fBvendor\fR or \fBthird_party\fR, etc)\. [default: \fBvendor\fR]
+.
+.P
+<name>
+.
+.P
+A name to provide the vendored dependency to use when listing/updating\.
+.
+.P
 <repository>
 .
 .P
@@ -49,35 +64,55 @@ The repository url to vendor\. e\.g\. \fBhttps://github\.com/<username>/<repo\-n
 <ref>
 .
 .P
-The ref to vendor\. e\.g\. \fBmaster\fR, \fBv1\.0\.2\fR, etc
-.
-.P
-<dir>
-.
-.P
-The vendor directory for the dependency\. e\.g\. \fBvendor/github\.com/<username>/<repo\-name>\fR\.
+The ref to vendor\. e\.g\. \fBmaster\fR, \fBv1\.0\.2\fR, etc\. [default: \fBmaster\fR]
 .
 .SH "EXAMPLES"
-Adding a new dependency:
+Adding a new dependency at a specific git tagged version:
 .
 .IP "" 4
 .
 .nf
 
-$ git vendor add https://github\.com/brettlangdon/forge v0\.1\.4
+$ git vendor add forge https://github\.com/brettlangdon/forge v0\.1\.4
 .
 .fi
 .
 .IP "" 0
 .
 .P
-Updating an existing dependency:
+Adding a new dependency under a different directory than \fBvendor/\fR:
 .
 .IP "" 4
 .
 .nf
 
-$ git vendor update vendor/github\.com/brettlangdon/forge v0\.1\.7
+$ git vendor add \-\-prefix third_party forge https://github\.com/brettlangdon/forge
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Updating an existing dependency to a specific git tagged version:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor update forge  v0\.1\.7
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Updating a dependency to \fBmaster\fR:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor update forge
 .
 .fi
 .

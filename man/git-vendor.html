@@ -66,7 +66,7 @@
 
   <ol class='man-decor man-head man head'>
     <li class='tl'>git-vendor(1)</li>
-    <li class='tc'></li>
+    <li class='tc'>Git Vendor</li>
     <li class='tr'>git-vendor(1)</li>
   </ol>
 
@@ -77,27 +77,29 @@
 
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
-<p><code>git-vendor add &lt;repository> &lt;ref></code></p>
+<p><code>git-vendor add [--prefix &lt;dir&gt;] &lt;name> &lt;repository> [&lt;ref>]</code></p>
 
-<p><code>git-vendor list</code></p>
+<p><code>git-vendor list [&lt;name>]</code></p>
 
-<p><code>git-vendor update &lt;dir&gt; &lt;ref></code></p>
+<p><code>git-vendor update &lt;name> [&lt;ref>]</code></p>
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>  Manage any repository dependencies under <code>/vendor/&lt;repository></code> with <code>git-subtree</code>.</p>
+<p>  Manage any repository dependencies with <code>git-subtree</code>.</p>
+
+<p>  <code>git-vendor</code> follows the same vendoring pattern that is used in the Go community. Dependencies are stored under <code>vendor/&lt;repository_uri></code>. For example, the dependency of <code>https://github.com/brettlangdon/forge.git</code> will be stored under <code>vendor/github.com/brettlangdon/forge</code> by default.</p>
 
 <p>  <code>git-vendor</code> is unable to <code>list</code> or <code>update</code> any dependencies it has not added, the reason is that <code>git-vendor</code> adds special commit messages so that it can track existing dependencies.</p>
 
 <h2 id="COMMANDS">COMMANDS</h2>
 
-<p>  add &lt;repository&gt; &lt;ref&gt;</p>
+<p>  add [--prefix &lt;dir&gt;] &lt;name&gt; &lt;repository&gt; [&lt;ref&gt;]</p>
 
 <p>  Add a new vendored dependency</p>
 
-<p>  list</p>
+<p>  list [<var>name</var>]</p>
 
-<p>  List all existing vendored dependencies and their current version</p>
+<p>  List all existing vendored dependencies and their current version. Limit show dependency to <code>&lt;name></code> if provided.</p>
 
 <p>  update &lt;dir&gt; &lt;ref&gt;</p>
 
@@ -105,28 +107,42 @@
 
 <h2 id="OPTIONS">OPTIONS</h2>
 
+<p>  --prefix &lt;dir&gt;</p>
+
+<p>  Directory to pull dependencies in under (e.g. <code>vendor</code> or <code>third_party</code>, etc). [default: <code>vendor</code>]</p>
+
+<p>  &lt;name&gt;</p>
+
+<p>  A name to provide the vendored dependency to use when listing/updating.</p>
+
 <p>  &lt;repository&gt;</p>
 
 <p>  The repository url to vendor. e.g. <code>https://github.com/&lt;username>/&lt;repo-name></code> (supports <code>http://</code>, <code>https://</code> <code>git://</code> and <code>git@</code> protocols).</p>
 
 <p>  &lt;ref&gt;</p>
 
-<p>  The ref to vendor. e.g. <code>master</code>, <code>v1.0.2</code>, etc</p>
-
-<p>  &lt;dir&gt;</p>
-
-<p>  The vendor directory for the dependency. e.g. <code>vendor/github.com/&lt;username>/&lt;repo-name></code>.</p>
+<p>  The ref to vendor. e.g. <code>master</code>, <code>v1.0.2</code>, etc. [default: <code>master</code>]</p>
 
 <h2 id="EXAMPLES">EXAMPLES</h2>
 
-<p>  Adding a new dependency:</p>
+<p>  Adding a new dependency at a specific git tagged version:</p>
 
-<pre><code>$ git vendor add https://github.com/brettlangdon/forge v0.1.4
+<pre><code>$ git vendor add forge https://github.com/brettlangdon/forge v0.1.4
 </code></pre>
 
-<p>  Updating an existing dependency:</p>
+<p>  Adding a new dependency under a different directory than <code>vendor/</code>:</p>
 
-<pre><code>$ git vendor update vendor/github.com/brettlangdon/forge v0.1.7
+<pre><code>$ git vendor add --prefix third_party forge https://github.com/brettlangdon/forge
+</code></pre>
+
+<p>  Updating an existing dependency to a specific git tagged version:</p>
+
+<pre><code>$ git vendor update forge  v0.1.7
+</code></pre>
+
+<p>  Updating a dependency to <code>master</code>:</p>
+
+<pre><code>$ git vendor update forge
 </code></pre>
 
 <p>  List all existing dependencies:</p>
@@ -136,7 +152,7 @@
 
 <h2 id="AUTHOR">AUTHOR</h2>
 
-<p>Written by Brett Langdon <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#109;&#101;&#x40;&#x62;&#x72;&#101;&#x74;&#116;&#46;&#105;&#115;" data-bare-link="true">&#109;&#x65;&#64;&#x62;&#114;&#101;&#x74;&#x74;&#46;&#105;&#x73;</a></p>
+<p>Written by Brett Langdon <a href="&#109;&#x61;&#x69;&#108;&#x74;&#111;&#58;&#x6d;&#101;&#64;&#98;&#x72;&#101;&#116;&#x74;&#x2e;&#105;&#115;" data-bare-link="true">&#109;&#x65;&#64;&#x62;&#114;&#x65;&#x74;&#x74;&#x2e;&#105;&#x73;</a></p>
 
 <h2 id="REPORTING-BUGS">REPORTING BUGS</h2>
 

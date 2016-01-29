@@ -3,27 +3,29 @@ git-vendor(1) -- manage vendored dependency subtrees
 
 ## SYNOPSIS
 
-`git-vendor add <repository> <ref>`
+`git-vendor add [--prefix <dir>] <name> <repository> [<ref>]`
 
-`git-vendor list`
+`git-vendor list [<name>]`
 
-`git-vendor update <dir> <ref>`
+`git-vendor update <name> [<ref>]`
 
 ## DESCRIPTION
 
-  Manage any repository dependencies under `/vendor/<repository>` with `git-subtree`.
+  Manage any repository dependencies with `git-subtree`.
+
+  `git-vendor` follows the same vendoring pattern that is used in the Go community. Dependencies are stored under `vendor/<repository_uri>`. For example, the dependency of `https://github.com/brettlangdon/forge.git` will be stored under `vendor/github.com/brettlangdon/forge` by default.
 
   `git-vendor` is unable to `list` or `update` any dependencies it has not added, the reason is that `git-vendor` adds special commit messages so that it can track existing dependencies.
 
 ## COMMANDS
 
-  add &lt;repository&gt; &lt;ref&gt;
+  add [--prefix &lt;dir&gt;] &lt;name&gt; &lt;repository&gt; [&lt;ref&gt;]
 
   Add a new vendored dependency
 
-  list
+  list [<name>]
 
-  List all existing vendored dependencies and their current version
+  List all existing vendored dependencies and their current version. Limit show dependency to `<name>` if provided.
 
   update &lt;dir&gt; &lt;ref&gt;
 
@@ -32,27 +34,39 @@ git-vendor(1) -- manage vendored dependency subtrees
 
 ## OPTIONS
 
+  --prefix &lt;dir&gt;
+
+  Directory to pull dependencies in under (e.g. `vendor` or `third_party`, etc). [default: `vendor`]
+
+  &lt;name&gt;
+
+  A name to provide the vendored dependency to use when listing/updating.
+
   &lt;repository&gt;
 
   The repository url to vendor. e.g. `https://github.com/<username>/<repo-name>` (supports `http://`, `https://` `git://` and `git@` protocols).
 
   &lt;ref&gt;
 
-  The ref to vendor. e.g. `master`, `v1.0.2`, etc
-
-  &lt;dir&gt;
-
-  The vendor directory for the dependency. e.g. `vendor/github.com/<username>/<repo-name>`.
+  The ref to vendor. e.g. `master`, `v1.0.2`, etc. [default: `master`]
 
 ## EXAMPLES
 
-  Adding a new dependency:
+  Adding a new dependency at a specific git tagged version:
 
-    $ git vendor add https://github.com/brettlangdon/forge v0.1.4
+    $ git vendor add forge https://github.com/brettlangdon/forge v0.1.4
 
-  Updating an existing dependency:
+  Adding a new dependency under a different directory than `vendor/`:
 
-    $ git vendor update vendor/github.com/brettlangdon/forge v0.1.7
+    $ git vendor add --prefix third_party forge https://github.com/brettlangdon/forge
+
+  Updating an existing dependency to a specific git tagged version:
+
+    $ git vendor update forge  v0.1.7
+
+  Updating a dependency to `master`:
+
+    $ git vendor update forge
 
   List all existing dependencies:
 
