@@ -127,8 +127,8 @@ cmd_update()
     if [ "$2" != "" ]; then
         ref="$2"
     fi
-    if [ $# -lt 1]; then
-        die "Incorrect options provided: git vendor upate <name> [<ref>]"
+    if [ $# -lt 1 ]; then
+        die "Incorrect options provided: git vendor update <name> [<ref>]"
     fi
     git log -1 --grep="^git-vendor-name: $name\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
