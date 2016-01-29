@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' value='text/html;charset=utf8'>
+  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <title>git-vendor(1) - manage vendored dependency subtrees</title>
+  <style type='text/css' media='all'>
+  /* style: man */
+  body#manpage {margin:0}
+  .mp {max-width:100ex;padding:0 9ex 1ex 4ex}
+  .mp p,.mp pre,.mp ul,.mp ol,.mp dl {margin:0 0 20px 0}
+  .mp h2 {margin:10px 0 0 0}
+  .mp > p,.mp > pre,.mp > ul,.mp > ol,.mp > dl {margin-left:8ex}
+  .mp h3 {margin:0 0 0 4ex}
+  .mp dt {margin:0;clear:left}
+  .mp dt.flush {float:left;width:8ex}
+  .mp dd {margin:0 0 0 9ex}
+  .mp h1,.mp h2,.mp h3,.mp h4 {clear:left}
+  .mp pre {margin-bottom:20px}
+  .mp pre+h2,.mp pre+h3 {margin-top:22px}
+  .mp h2+pre,.mp h3+pre {margin-top:5px}
+  .mp img {display:block;margin:auto}
+  .mp h1.man-title {display:none}
+  .mp,.mp code,.mp pre,.mp tt,.mp kbd,.mp samp,.mp h3,.mp h4 {font-family:monospace;font-size:14px;line-height:1.42857142857143}
+  .mp h2 {font-size:16px;line-height:1.25}
+  .mp h1 {font-size:20px;line-height:2}
+  .mp {text-align:justify;background:#fff}
+  .mp,.mp code,.mp pre,.mp pre code,.mp tt,.mp kbd,.mp samp {color:#131211}
+  .mp h1,.mp h2,.mp h3,.mp h4 {color:#030201}
+  .mp u {text-decoration:underline}
+  .mp code,.mp strong,.mp b {font-weight:bold;color:#131211}
+  .mp em,.mp var {font-style:italic;color:#232221;text-decoration:none}
+  .mp a,.mp a:link,.mp a:hover,.mp a code,.mp a pre,.mp a tt,.mp a kbd,.mp a samp {color:#0000ff}
+  .mp b.man-ref {font-weight:normal;color:#434241}
+  .mp pre {padding:0 4ex}
+  .mp pre code {font-weight:normal;color:#434241}
+  .mp h2+pre,h3+pre {padding-left:0}
+  ol.man-decor,ol.man-decor li {margin:3px 0 10px 0;padding:0;float:left;width:33%;list-style-type:none;text-transform:uppercase;color:#999;letter-spacing:1px}
+  ol.man-decor {width:100%}
+  ol.man-decor li.tl {text-align:left}
+  ol.man-decor li.tc {text-align:center;letter-spacing:4px}
+  ol.man-decor li.tr {text-align:right;float:right}
+  </style>
+</head>
+<!--
+  The following styles are deprecated and will be removed at some point:
+  div#man, div#man ol.man, div#man ol.head, div#man ol.man.
+
+  The .man-page, .man-decor, .man-head, .man-foot, .man-title, and
+  .man-navigation should be used instead.
+-->
+<body id='manpage'>
+  <div class='mp' id='man'>
+
+  <div class='man-navigation' style='display:none'>
+    <a href="#NAME">NAME</a>
+    <a href="#SYNOPSIS">SYNOPSIS</a>
+    <a href="#DESCRIPTION">DESCRIPTION</a>
+    <a href="#COMMANDS">COMMANDS</a>
+    <a href="#OPTIONS">OPTIONS</a>
+    <a href="#EXAMPLES">EXAMPLES</a>
+    <a href="#AUTHOR">AUTHOR</a>
+    <a href="#REPORTING-BUGS">REPORTING BUGS</a>
+    <a href="#SEE-ALSO">SEE ALSO</a>
+  </div>
+
+  <ol class='man-decor man-head man head'>
+    <li class='tl'>git-vendor(1)</li>
+    <li class='tc'>Git Vendor</li>
+    <li class='tr'>git-vendor(1)</li>
+  </ol>
+
+  <h2 id="NAME">NAME</h2>
+<p class="man-name">
+  <code>git-vendor</code> - <span class="man-whatis">manage vendored dependency subtrees</span>
+</p>
+
+<h2 id="SYNOPSIS">SYNOPSIS</h2>
+
+<p><code>git-vendor add [--prefix &lt;dir&gt;] &lt;name> &lt;repository> [&lt;ref>]</code></p>
+
+<p><code>git-vendor list [&lt;name>]</code></p>
+
+<p><code>git-vendor update &lt;name> [&lt;ref>]</code></p>
+
+<h2 id="DESCRIPTION">DESCRIPTION</h2>
+
+<p>  Manage any repository dependencies with <code>git-subtree</code>.</p>
+
+<p>  <code>git-vendor</code> follows the same vendoring pattern that is used in the Go community. Dependencies are stored under <code>vendor/&lt;repository_uri></code>. For example, the dependency of <code>https://github.com/brettlangdon/forge.git</code> will be stored under <code>vendor/github.com/brettlangdon/forge</code> by default.</p>
+
+<p>  <code>git-vendor</code> is unable to <code>list</code> or <code>update</code> any dependencies it has not added, the reason is that <code>git-vendor</code> adds special commit messages so that it can track existing dependencies.</p>
+
+<h2 id="COMMANDS">COMMANDS</h2>
+
+<p>  add [--prefix &lt;dir&gt;] &lt;name&gt; &lt;repository&gt; [&lt;ref&gt;]</p>
+
+<p>  Add a new vendored dependency</p>
+
+<p>  list [<var>name</var>]</p>
+
+<p>  List all existing vendored dependencies and their current version. Limit show dependency to <code>&lt;name></code> if provided.</p>
+
+<p>  update &lt;dir&gt; &lt;ref&gt;</p>
+
+<p>  Update the vendored dependency to a different version</p>
+
+<h2 id="OPTIONS">OPTIONS</h2>
+
+<p>  --prefix &lt;dir&gt;</p>
+
+<p>  Directory to pull dependencies in under (e.g. <code>vendor</code> or <code>third_party</code>, etc). [default: <code>vendor</code>]</p>
+
+<p>  &lt;name&gt;</p>
+
+<p>  A name to provide the vendored dependency to use when listing/updating.</p>
+
+<p>  &lt;repository&gt;</p>
+
+<p>  The repository url to vendor. e.g. <code>https://github.com/&lt;username>/&lt;repo-name></code> (supports <code>http://</code>, <code>https://</code> <code>git://</code> and <code>git@</code> protocols).</p>
+
+<p>  &lt;ref&gt;</p>
+
+<p>  The ref to vendor. e.g. <code>master</code>, <code>v1.0.2</code>, etc. [default: <code>master</code>]</p>
+
+<h2 id="EXAMPLES">EXAMPLES</h2>
+
+<p>  Adding a new dependency at a specific git tagged version:</p>
+
+<pre><code>$ git vendor add forge https://github.com/brettlangdon/forge v0.1.4
+</code></pre>
+
+<p>  Adding a new dependency under a different directory than <code>vendor/</code>:</p>
+
+<pre><code>$ git vendor add --prefix third_party forge https://github.com/brettlangdon/forge
+</code></pre>
+
+<p>  Updating an existing dependency to a specific git tagged version:</p>
+
+<pre><code>$ git vendor update forge  v0.1.7
+</code></pre>
+
+<p>  Updating a dependency to <code>master</code>:</p>
+
+<pre><code>$ git vendor update forge
+</code></pre>
+
+<p>  List all existing dependencies:</p>
+
+<pre><code>$ git vendor list
+</code></pre>
+
+<h2 id="AUTHOR">AUTHOR</h2>
+
+<p>Written by Brett Langdon <a href="&#109;&#x61;&#x69;&#108;&#x74;&#111;&#58;&#x6d;&#101;&#64;&#98;&#x72;&#101;&#116;&#x74;&#x2e;&#105;&#115;" data-bare-link="true">&#109;&#x65;&#64;&#x62;&#114;&#x65;&#x74;&#x74;&#x2e;&#105;&#x73;</a></p>
+
+<h2 id="REPORTING-BUGS">REPORTING BUGS</h2>
+
+<p>&lt;<a href="https://github.com/brettlangdon/git-vendor/issues" data-bare-link="true">https://github.com/brettlangdon/git-vendor/issues</a>&gt;</p>
+
+<h2 id="SEE-ALSO">SEE ALSO</h2>
+
+<p>&lt;<a href="https://github.com/brettlangdon/git-vendor" data-bare-link="true">https://github.com/brettlangdon/git-vendor</a>&gt;</p>
+
+
+  <ol class='man-decor man-foot man foot'>
+    <li class='tl'></li>
+    <li class='tc'>January 2016</li>
+    <li class='tr'>git-vendor(1)</li>
+  </ol>
+
+  </div>
+</body>
+</html>
