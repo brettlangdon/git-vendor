@@ -41,15 +41,21 @@ fi
 vendor_names_from_log()
 {
     name=
+    dir=
     git log --grep="^git-vendor-name: .*\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
 		git-vendor-name:) name="$b" ;;
+                git-vendor-dir:) dir="$b" ;;
 		END)
-                    echo "$name"
+                    # Only consider dependencies which still exist on disk
+                    if [ -d "$dir" ]; then
+                        echo "$name"
+                    fi
                     name=
+                    dir=
                     ;;
 	    esac
 	done | sort -u
@@ -63,6 +69,7 @@ vendor_git_log_first()
 
 cmd_add()
 {
+    require_clean_work_tree
     name="$1"
     repository="$2"
     ref="master"
@@ -90,45 +97,45 @@ git-vendor-ref: $ref
 cmd_list()
 {
     showOnly="$1"
-    vendorNames=($(vendor_names_from_log | sort -u))
+    vendorNames=$(vendor_names_from_log)
     for name in "${vendorNames[@]}";
     do
-    git log -1 --grep="^git-vendor-name: $name\$" \
-	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
-	while read a b junk; do
-	    case "$a" in
-		START) commit="$b" ;;
-                git-vendor-name:) name="$b" ;;
-                git-vendor-dir:) dir="$b" ;;
-                git-vendor-ref:) ref="$b" ;;
-		git-vendor-repository:) repository="$b" ;;
-		END)
-                    if [[ ! -z "$repository" ]];
-                    then
-                        if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
-                            echo "$name@$ref:"
-                            echo "\tname:\t$name"
-                            echo "\tdir:\t$dir"
-                            echo "\trepo:\t$repository"
-                            echo "\tref:\t$ref"
-                            echo "\tcommit:\t$commit"
-                            echo ""
+        vendor_git_log_first "$name" |
+	    while read a b junk; do
+	        case "$a" in
+		    START) commit="$b" ;;
+                    git-vendor-name:) name="$b" ;;
+                    git-vendor-dir:) dir="$b" ;;
+                    git-vendor-ref:) ref="$b" ;;
+		    git-vendor-repository:) repository="$b" ;;
+		    END)
+                        if [[ ! -z "$repository" ]];
+                        then
+                            if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
+                                echo "$name@$ref:"
+                                echo "\tname:\t$name"
+                                echo "\tdir:\t$dir"
+                                echo "\trepo:\t$repository"
+                                echo "\tref:\t$ref"
+                                echo "\tcommit:\t$commit"
+                                echo ""
+                            fi
                         fi
-                    fi
-                    name=
-                    dir=
-                    ref=
-                    commit=
-                    repository=
-                    ;;
-	    esac
-	done
+                        name=
+                        dir=
+                        ref=
+                        commit=
+                        repository=
+                        ;;
+	        esac
+	    done
     done;
 
 }
 
 cmd_update()
 {
+    require_clean_work_tree
     name="$1"
     ref="master"
     if [ "$2" != "" ]; then
@@ -137,14 +144,18 @@ cmd_update()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor update <name> [<ref>]"
     fi
-    git log -1 --grep="^git-vendor-name: $name\$" \
-	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+    vendor_git_log_first "$name" |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
                 git-vendor-dir:) dir="$b" ;;
 		git-vendor-repository:) repository="$b" ;;
 		END)
+                    # Make sure the dependency exists on disk
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+
                     if [[ ! -z "$repository" ]];
                     then
                         message="\
