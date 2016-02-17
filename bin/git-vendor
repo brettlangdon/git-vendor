@@ -11,6 +11,7 @@ Usage:
   git vendor --help
   git vendor add [--prefix <dir>] <name> <repository> [<ref>]
   git vendor list [<name>]
+  git vendor remove <name>
   git vendor update <name> [<ref>]
 EOF
 }
@@ -26,7 +27,7 @@ esac
 command="$1"
 shift
 case "$command" in
-    "add"|"list"|"update") ;;
+    "add"|"list"|"remove"|"update") ;;
     *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
 esac
 
@@ -51,7 +52,13 @@ vendor_names_from_log()
                     name=
                     ;;
 	    esac
-	done
+	done | sort -u
+}
+
+vendor_git_log_first()
+{
+    name="$1"
+    git log -1 --grep="^git-vendor-name: $name\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD
 }
 
 cmd_add()
@@ -156,4 +163,30 @@ git-vendor-ref: $ref
 	done
 }
 
+cmd_remove()
+{
+    require_clean_work_tree
+    name="$1"
+    if [ $# -lt 1 ]; then
+        die "Incorrect options provided: git vendor remove <name>"
+    fi
+    vendor_git_log_first "$name" |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+                git-vendor-dir:) dir="$b" ;;
+		END)
+                    # Make sure the dependency exists
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+                    git rm -rf "$dir"
+                    git commit --message "Removing \"$name\" from \"$dir\""
+                    break
+                    ;;
+	    esac
+	done
+}
+
+# Run the command
 "cmd_$command" "$@"
