@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "GIT\-VENDOR" "1" "January 2016" "" "Git Vendor"
+.TH "GIT\-VENDOR" "1" "February 2016" "" "Git Vendor"
 .
 .SH "NAME"
 \fBgit\-vendor\fR \- manage vendored dependency subtrees
@@ -11,6 +11,9 @@
 .
 .P
 \fBgit\-vendor list [<name>]\fR
+.
+.P
+\fBgit\-vendor remove <name>\fR
 .
 .P
 \fBgit\-vendor update <name> [<ref>]\fR
@@ -31,16 +34,22 @@ add [\-\-prefix <dir>] <name> <repository> [<ref>]
 Add a new vendored dependency
 .
 .P
-list [\fIname\fR]
+list [<name>]
 .
 .P
 List all existing vendored dependencies and their current version\. Limit show dependency to \fB<name>\fR if provided\.
 .
 .P
+remove <name>
+.
+.P
+Remove the named vendored dependency\.
+.
+.P
 update <dir> <ref>
 .
 .P
-Update the vendored dependency to a different version
+Update the vendored dependency to a different version\.
 .
 .SH "OPTIONS"
 \-\-prefix <dir>
@@ -113,6 +122,19 @@ Updating a dependency to \fBmaster\fR:
 .nf
 
 $ git vendor update forge
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Removing a dependency:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor remove forge
 .
 .fi
 .
