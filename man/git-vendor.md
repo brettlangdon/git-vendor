@@ -7,6 +7,8 @@ git-vendor(1) -- manage vendored dependency subtrees
 
 `git-vendor list [<name>]`
 
+`git-vendor remove <name>`
+
 `git-vendor update <name> [<ref>]`
 
 ## DESCRIPTION
@@ -23,13 +25,17 @@ git-vendor(1) -- manage vendored dependency subtrees
 
   Add a new vendored dependency
 
-  list [<name>]
+  list [&lt;name&gt;]
 
   List all existing vendored dependencies and their current version. Limit show dependency to `<name>` if provided.
 
+  remove &lt;name&gt;
+
+  Remove the named vendored dependency.
+
   update &lt;dir&gt; &lt;ref&gt;
 
-  Update the vendored dependency to a different version
+  Update the vendored dependency to a different version.
 
 
 ## OPTIONS
@@ -67,6 +73,10 @@ git-vendor(1) -- manage vendored dependency subtrees
   Updating a dependency to `master`:
 
     $ git vendor update forge
+
+  Removing a dependency:
+
+    $ git vendor remove forge
 
   List all existing dependencies:
 

@@ -11,6 +11,7 @@ Usage:
   git vendor --help
   git vendor add [--prefix <dir>] <name> <repository> [<ref>]
   git vendor list [<name>]
+  git vendor remove <name>
   git vendor update <name> [<ref>]
 EOF
 }
@@ -26,7 +27,7 @@ esac
 command="$1"
 shift
 case "$command" in
-    "add"|"list"|"update") ;;
+    "add"|"list"|"remove"|"update") ;;
     *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
 esac
 
@@ -40,22 +41,35 @@ fi
 vendor_names_from_log()
 {
     name=
+    dir=
     git log --grep="^git-vendor-name: .*\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
 		git-vendor-name:) name="$b" ;;
+                git-vendor-dir:) dir="$b" ;;
 		END)
-                    echo "$name"
+                    # Only consider dependencies which still exist on disk
+                    if [ -d "$dir" ]; then
+                        echo "$name"
+                    fi
                     name=
+                    dir=
                     ;;
 	    esac
-	done
+	done | sort -u
+}
+
+vendor_git_log_first()
+{
+    name="$1"
+    git log -1 --grep="^git-vendor-name: $name\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD
 }
 
 cmd_add()
 {
+    require_clean_work_tree
     name="$1"
     repository="$2"
     ref="master"
@@ -83,45 +97,45 @@ git-vendor-ref: $ref
 cmd_list()
 {
     showOnly="$1"
-    vendorNames=($(vendor_names_from_log | sort -u))
+    vendorNames=$(vendor_names_from_log)
     for name in "${vendorNames[@]}";
     do
-    git log -1 --grep="^git-vendor-name: $name\$" \
-	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
-	while read a b junk; do
-	    case "$a" in
-		START) commit="$b" ;;
-                git-vendor-name:) name="$b" ;;
-                git-vendor-dir:) dir="$b" ;;
-                git-vendor-ref:) ref="$b" ;;
-		git-vendor-repository:) repository="$b" ;;
-		END)
-                    if [[ ! -z "$repository" ]];
-                    then
-                        if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
-                            echo "$name@$ref:"
-                            echo "\tname:\t$name"
-                            echo "\tdir:\t$dir"
-                            echo "\trepo:\t$repository"
-                            echo "\tref:\t$ref"
-                            echo "\tcommit:\t$commit"
-                            echo ""
+        vendor_git_log_first "$name" |
+	    while read a b junk; do
+	        case "$a" in
+		    START) commit="$b" ;;
+                    git-vendor-name:) name="$b" ;;
+                    git-vendor-dir:) dir="$b" ;;
+                    git-vendor-ref:) ref="$b" ;;
+		    git-vendor-repository:) repository="$b" ;;
+		    END)
+                        if [[ ! -z "$repository" ]];
+                        then
+                            if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
+                                echo "$name@$ref:"
+                                echo "\tname:\t$name"
+                                echo "\tdir:\t$dir"
+                                echo "\trepo:\t$repository"
+                                echo "\tref:\t$ref"
+                                echo "\tcommit:\t$commit"
+                                echo ""
+                            fi
                         fi
-                    fi
-                    name=
-                    dir=
-                    ref=
-                    commit=
-                    repository=
-                    ;;
-	    esac
-	done
+                        name=
+                        dir=
+                        ref=
+                        commit=
+                        repository=
+                        ;;
+	        esac
+	    done
     done;
 
 }
 
 cmd_update()
 {
+    require_clean_work_tree
     name="$1"
     ref="master"
     if [ "$2" != "" ]; then
@@ -130,14 +144,18 @@ cmd_update()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor update <name> [<ref>]"
     fi
-    git log -1 --grep="^git-vendor-name: $name\$" \
-	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+    vendor_git_log_first "$name" |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
                 git-vendor-dir:) dir="$b" ;;
 		git-vendor-repository:) repository="$b" ;;
 		END)
+                    # Make sure the dependency exists on disk
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+
                     if [[ ! -z "$repository" ]];
                     then
                         message="\
@@ -156,4 +174,30 @@ git-vendor-ref: $ref
 	done
 }
 
+cmd_remove()
+{
+    require_clean_work_tree
+    name="$1"
+    if [ $# -lt 1 ]; then
+        die "Incorrect options provided: git vendor remove <name>"
+    fi
+    vendor_git_log_first "$name" |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+                git-vendor-dir:) dir="$b" ;;
+		END)
+                    # Make sure the dependency exists
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+                    git rm -rf "$dir"
+                    git commit --message "Removing \"$name\" from \"$dir\""
+                    break
+                    ;;
+	    esac
+	done
+}
+
+# Run the command
 "cmd_$command" "$@"
