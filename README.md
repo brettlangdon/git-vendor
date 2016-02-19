@@ -33,6 +33,11 @@ One-liner:
 curl -sSL https://git.io/vzN5m | sudo bash /dev/stdin
 ```
 
+[Homebrew](http://brew.sh) (thanks to @liamstask):
+```bash
+brew install git-vendor
+```
+
 ## Example
 
 ```bash
