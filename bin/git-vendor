@@ -97,8 +97,7 @@ git-vendor-ref: $ref
 cmd_list()
 {
     showOnly="$1"
-    vendorNames=$(vendor_names_from_log)
-    for name in "${vendorNames[@]}";
+    for name in $(vendor_names_from_log);
     do
         vendor_git_log_first "$name" |
 	    while read a b junk; do
