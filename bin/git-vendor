@@ -32,11 +32,10 @@ case "$command" in
 esac
 
 prefix="vendor"
-if [ "$1" == "--prefix" ]; then
+if [ "$1" = "--prefix" ]; then
     prefix="$2"
     shift; shift
 fi
-
 
 vendor_names_from_log()
 {
@@ -108,16 +107,16 @@ cmd_list()
                     git-vendor-ref:) ref="$b" ;;
 		    git-vendor-repository:) repository="$b" ;;
 		    END)
-                        if [[ ! -z "$repository" ]];
+                        if [ ! -z "$repository" ];
                         then
-                            if [[ -z "$showOnly" ]] || [ "$showOnly" == "$name" ]; then
-                                echo "$name@$ref:"
-                                echo "\tname:\t$name"
-                                echo "\tdir:\t$dir"
-                                echo "\trepo:\t$repository"
-                                echo "\tref:\t$ref"
-                                echo "\tcommit:\t$commit"
-                                echo ""
+                            if [ -z "$showOnly" -o "$showOnly" = "$name" ]; then
+                                printf "$name@$ref:\n"
+                                printf "\tname:\t$name\n"
+                                printf "\tdir:\t$dir\n"
+                                printf "\trepo:\t$repository\n"
+                                printf "\tref:\t$ref\n"
+                                printf "\tcommit:\t$commit\n"
+                                printf "\n"
                             fi
                         fi
                         name=
@@ -155,7 +154,7 @@ cmd_update()
                         die "Dependency \"$1\" is missing from \"$dir\""
                     fi
 
-                    if [[ ! -z "$repository" ]];
+                    if [ ! -z "$repository" ];
                     then
                         message="\
 Update \"$name\" from \"$repository@$ref\"
