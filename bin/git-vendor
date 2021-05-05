@@ -37,6 +37,12 @@ if [ "$1" = "--prefix" ]; then
     shift; shift
 fi
 
+# Simulate an associative array (for older versions of bash)
+var_name()
+{
+    echo -n "name_$1" | tr -c '[A-Za-z0-9]' '_'
+}
+
 vendor_names_from_log()
 {
     name=
@@ -50,8 +56,11 @@ vendor_names_from_log()
                 git-vendor-dir:) dir="$b" ;;
 		END)
                     # Only consider dependencies which still exist on disk
-                    if [ -d "$dir" ]; then
+                    # and haven't been renamed
+                    eval `echo -n val='$'$(var_name "$dir")`
+                    if [ -d "$dir" -a -z "$val" ]; then
                         echo "$name"
+                        eval `echo -n $(var_name "$dir")=1`
                     fi
                     name=
                     dir=
@@ -60,10 +69,28 @@ vendor_names_from_log()
 	done | sort -u
 }
 
-vendor_git_log_first()
+vendor_git_log_from_name()
 {
     name="$1"
     git log -1 --grep="^git-vendor-name: $name\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD
+}
+
+vendor_name_from_dir()
+{
+    name=
+    dir="$1"
+    git log -1 --grep="^git-vendor-dir: $dir\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+        while read a b junk; do
+            case "$a" in
+                git-vendor-name:) name="$b" ;;
+                END)
+                    if [ -n "$name" ]; then
+                        echo "$name"
+                    fi
+                    name=
+                    ;;
+            esac
+        done
 }
 
 cmd_add()
@@ -98,7 +125,7 @@ cmd_list()
     showOnly="$1"
     for name in $(vendor_names_from_log);
     do
-        vendor_git_log_first "$name" |
+        vendor_git_log_from_name "$name" |
 	    while read a b junk; do
 	        case "$a" in
 		    START) commit="$b" ;;
@@ -142,7 +169,7 @@ cmd_update()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor update <name> [<ref>]"
     fi
-    vendor_git_log_first "$name" |
+    vendor_git_log_from_name "$name" |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
@@ -152,6 +179,12 @@ cmd_update()
                     # Make sure the dependency exists on disk
                     if [ ! -d "$dir" ]; then
                         die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+
+                    # And hasn't been renamed
+                    logname=$(vendor_name_from_dir "$dir")
+                    if [ "$name" != "$logname" ]; then
+                        die "Dependency \"$1\" was renamed \"$logname\""
                     fi
 
                     if [ ! -z "$repository" ];
@@ -179,7 +212,7 @@ cmd_remove()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor remove <name>"
     fi
-    vendor_git_log_first "$name" |
+    vendor_git_log_from_name "$name" |
 	while read a b junk; do
 	    case "$a" in
 		START) ;;
@@ -189,6 +222,12 @@ cmd_remove()
                     if [ ! -d "$dir" ]; then
                         die "Dependency \"$1\" is missing from \"$dir\""
                     fi
+                    # And hasn't been renamed
+                    logname=$(vendor_name_from_dir "$dir")
+                    if [ "$name" != "$logname" ]; then
+                        die "Dependency \"$1\" was renamed \"$logname\""
+                    fi
+
                     git rm -rf "$dir"
                     git commit --message "Removing \"$name\" from \"$dir\""
                     break
