@@ -16,13 +16,13 @@ Usage:
 EOF
 }
 
+case "$1" in
+    ""|"-h"|"--help") _usage && exit ;;
+esac
+
 PATH=$PATH:$(git --exec-path)
 . git-sh-setup
 require_work_tree
-
-case "$1" in
-    ""|"--help") _usage && exit ;;
-esac
 
 command="$1"
 shift
