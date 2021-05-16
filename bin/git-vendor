@@ -20,22 +20,48 @@ PATH=$PATH:$(git --exec-path)
 . git-sh-setup
 require_work_tree
 
-case "$1" in
-    ""|"--help") _usage && exit ;;
-esac
+[ "$#" -eq 0 ] && _usage && exit 1
 
-command="$1"
-shift
-case "$command" in
-    "add"|"list"|"remove"|"update") ;;
-    *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
-esac
+#some default command values
+ref="master"
 
+#default option values
 prefix="vendor"
-if [ "$1" = "--prefix" ]; then
-    prefix="$2"
-    shift; shift
-fi
+
+while [ "$#" -gt 0 ] ; do
+	argument="$1"
+	shift
+
+	case "$argument" in
+		"add")
+			[ $# -lt 2 ] && die "Incorrect options provided: git vendor add <name> <repository> [<ref>]" && exit 1
+			command=$argument
+			name="$1" && shift
+			repository="$1" && shift
+			[ -n "$1" ] && [ -n "${1##--*}" ] && ref="$1" && shift
+			;;
+		"list")
+			command=$argument
+			[ -n "$1" ] && [ -n "${1##--*}" ] && show_only="$1" && shift
+			;;
+		"remove")
+			[ $# -lt 1 ] && die "Incorrect options provided: git vendor remove <name>" && exit 1
+			command=$argument
+			name="$1" && shift
+			;;
+		"update")
+			[ $# -lt 1 ] && die "Incorrect options provided: git vendor update <name> [<ref>]" && exit 1
+			command=$argument
+			name="$1" && shift
+			[ -n "$1" ] && [ -n "${1##--*}" ] && ref="$1" && shift
+			;;
+		"--prefix") prefix="$1" && shift ;;
+		"--help") _usage && exit ;;
+		*) >&2 echo "error: unknown option \"$argument\"" && _usage && exit 1 ;;
+	esac
+done
+
+[ -z $command ] && _usage && exit 1
 
 vendor_names_from_log()
 {
@@ -69,16 +95,6 @@ vendor_git_log_first()
 cmd_add()
 {
     require_clean_work_tree
-    name="$1"
-    repository="$2"
-    ref="master"
-    if [ "$3" != "" ]; then
-        ref="$3"
-    fi
-    if [ $# -lt 2 ];
-    then
-        die "Incorrect options provided: git vendor add <name> <repository> [<ref>]"
-    fi
 
     dir="$prefix/$(echo "$repository" | sed -E 's/^[a-zA-Z]+((:\/\/)|@|(:\/\/git@))//' | sed -E 's/:[0-9]+//' | sed -E 's/\.git$//')"
     message="\
@@ -95,7 +111,6 @@ git-vendor-ref: $ref
 
 cmd_list()
 {
-    showOnly="$1"
     for name in $(vendor_names_from_log);
     do
         vendor_git_log_first "$name" |
@@ -109,7 +124,7 @@ cmd_list()
 		    END)
                         if [ ! -z "$repository" ];
                         then
-                            if [ -z "$showOnly" -o "$showOnly" = "$name" ]; then
+                            if [ -z "$show_only" -o "$show_only" = "$name" ]; then
                                 printf "$name@$ref:\n"
                                 printf "\tname:\t$name\n"
                                 printf "\tdir:\t$dir\n"
@@ -134,14 +149,7 @@ cmd_list()
 cmd_update()
 {
     require_clean_work_tree
-    name="$1"
-    ref="master"
-    if [ "$2" != "" ]; then
-        ref="$2"
-    fi
-    if [ $# -lt 1 ]; then
-        die "Incorrect options provided: git vendor update <name> [<ref>]"
-    fi
+
     vendor_git_log_first "$name" |
 	while read a b junk; do
 	    case "$a" in
@@ -175,10 +183,7 @@ git-vendor-ref: $ref
 cmd_remove()
 {
     require_clean_work_tree
-    name="$1"
-    if [ $# -lt 1 ]; then
-        die "Incorrect options provided: git vendor remove <name>"
-    fi
+
     vendor_git_log_first "$name" |
 	while read a b junk; do
 	    case "$a" in
