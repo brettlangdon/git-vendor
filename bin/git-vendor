@@ -40,7 +40,7 @@ fi
 # Simulate an associative array (for older versions of bash)
 var_name()
 {
-    echo -n "name_$1" | tr -c '[A-Za-z0-9]' '_'
+    printf "name_$1" | tr -c '[A-Za-z0-9]' '_'
 }
 
 vendor_names_from_log()
@@ -57,10 +57,10 @@ vendor_names_from_log()
 		END)
                     # Only consider dependencies which still exist on disk
                     # and haven't been renamed
-                    eval `echo -n val='$'$(var_name "$dir")`
+                    eval `printf val='$'$(var_name "$dir")`
                     if [ -d "$dir" -a -z "$val" ]; then
                         echo "$name"
-                        eval `echo -n $(var_name "$dir")=1`
+                        eval `printf $(var_name "$dir")=1`
                     fi
                     name=
                     dir=
