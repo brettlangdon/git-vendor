@@ -175,6 +175,7 @@ cmd_update()
 		START) ;;
                 git-vendor-dir:) dir="$b" ;;
 		git-vendor-repository:) repository="$b" ;;
+		git-vendor-ref:) curr_ref="$b" ;;
 		END)
                     # Make sure the dependency exists on disk
                     if [ ! -d "$dir" ]; then
@@ -197,6 +198,7 @@ git-vendor-dir: $dir
 git-vendor-repository: $repository
 git-vendor-ref: $ref
 "
+                        git fetch "$repository" "$curr_ref"
                         git subtree pull --prefix "$dir" --message "$message" "$repository" "$ref" --squash
                         break
                     fi
