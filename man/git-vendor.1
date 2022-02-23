@@ -18,6 +18,9 @@
 .P
 \fBgit\-vendor update <name> [<ref>]\fR
 .
+.P
+\fBgit\-vendor push <name> [<ref>]\fR
+.
 .SH "DESCRIPTION"
 Manage any repository dependencies with \fBgit\-subtree\fR\.
 .
@@ -25,7 +28,7 @@ Manage any repository dependencies with \fBgit\-subtree\fR\.
 \fBgit\-vendor\fR follows the same vendoring pattern that is used in the Go community\. Dependencies are stored under \fBvendor/<repository_uri>\fR\. For example, the dependency of \fBhttps://github\.com/brettlangdon/forge\.git\fR will be stored under \fBvendor/github\.com/brettlangdon/forge\fR by default\.
 .
 .P
-\fBgit\-vendor\fR is unable to \fBlist\fR or \fBupdate\fR any dependencies it has not added, the reason is that \fBgit\-vendor\fR adds special commit messages so that it can track existing dependencies\.
+\fBgit\-vendor\fR is unable to \fBlist\fR, \fBupdate\fR or \fBpush\fR any dependencies it has not added, the reason is that \fBgit\-vendor\fR adds special commit messages so that it can track existing dependencies\.
 .
 .SH "COMMANDS"
 add [\-\-prefix <dir>] <name> <repository> [<ref>]
@@ -50,6 +53,12 @@ update <dir> <ref>
 .
 .P
 Update the vendored dependency to a different version\.
+.
+.P
+push <dir> <ref>
+.
+.P
+Push the vendored dependency changes to the source repository\.
 .
 .SH "OPTIONS"
 \-\-prefix <dir>
@@ -122,6 +131,32 @@ Updating a dependency to \fBmaster\fR:
 .nf
 
 $ git vendor update forge
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Pushing changes to the source repository to a (new) branch \fBmy_changes\fR:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor push forge my_changes
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Pushing changes to the source repository to \fBmaster\fR:
+.
+.IP "" 4
+.
+.nf
+
+$ git vendor push forge
 .
 .fi
 .
