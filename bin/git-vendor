@@ -13,7 +13,7 @@ Usage:
   git vendor list [<name>]
   git vendor remove <name>
   git vendor update <name> [<ref>]
-  git vendor push <name> [<ref>]
+  git vendor upstream <name> [<ref>] [--repo <repository>]
 EOF
 }
 
@@ -28,7 +28,7 @@ require_work_tree
 command="$1"
 shift
 case "$command" in
-    "add"|"list"|"remove"|"update"|"push") ;;
+    "add"|"list"|"remove"|"update"|"upstream") ;;
     *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
 esac
 
@@ -208,44 +208,64 @@ git-vendor-ref: $ref
 	done
 }
 
-cmd_push()
+cmd_upstream()
 {
     require_clean_work_tree
-    name="$1"
-    ref="master"
-    if [ "$2" != "" ]; then
-        ref="$2"
+    while [ $# -gt 0 ] ; do
+        case $1 in
+            --repo)
+            repository_arg="$2"
+            shift # argument value
+            ;;
+            *)
+            if [ -z "$name" ]; then
+                name="$1"
+            elif [ -z "$ref" ]; then
+                ref="$1"
+            fi
+            ;;
+        esac
+        shift # current argument
+    done
+    if [ -z "$name" ]; then
+        die "Incorrect options provided: git vendor upstream <name> [<ref>] [--repo <repository>]"
     fi
-    if [ $# -lt 1 ]; then
-        die "Incorrect options provided: git vendor push <name> [<ref>]"
+    if [ -z "$ref" ]; then
+        ref="master"
     fi
     vendor_git_log_from_name "$name" |
-	while read a b junk; do
-	    case "$a" in
-		START) ;;
-                git-vendor-dir:) dir="$b" ;;
-		git-vendor-repository:) repository="$b" ;;
-		git-vendor-ref:) curr_ref="$b" ;;
-		END)
-                    # Make sure the dependency exists on disk
-                    if [ ! -d "$dir" ]; then
-                        die "Dependency \"$1\" is missing from \"$dir\""
-                    fi
+    while read a b junk; do
+        case "$a" in
+        START) ;;
+        git-vendor-dir:) dir="$b" ;;
+        git-vendor-repository:) repository="$b" ;;
+        END)
+            # Make sure the dependency exists on disk
+            if [ ! -d "$dir" ]; then
+                die "Dependency \"$1\" is missing from \"$dir\""
+            fi
 
-                    # And hasn't been renamed
-                    logname=$(vendor_name_from_dir "$dir")
-                    if [ "$name" != "$logname" ]; then
-                        die "Dependency \"$1\" was renamed \"$logname\""
-                    fi
+            # And hasn't been renamed
+            logname=$(vendor_name_from_dir "$dir")
+            if [ "$name" != "$logname" ]; then
+                die "Dependency \"$1\" was renamed \"$logname\""
+            fi
 
-                    if [ ! -z "$repository" ];
-                    then
-                        git subtree push --prefix "$dir" "$repository" "$ref"
-                        break
-                    fi
-                    ;;
-	    esac
-	done
+            if [ ! -z "$repository_arg" ];
+            then
+                # override the reposition read from the commit logs
+                # with the one read from the command line arguments
+                repository=$repository_arg
+            fi
+            
+            if [ ! -z "$repository" ];
+            then
+                git subtree push --prefix "$dir" "$repository" "$ref"
+                break
+            fi
+            ;;
+        esac
+    done
 }
 
 cmd_remove()

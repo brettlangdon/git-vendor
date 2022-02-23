@@ -11,7 +11,7 @@ git-vendor(1) -- manage vendored dependency subtrees
 
 `git-vendor update <name> [<ref>]`
 
-`git-vendor push <name> [<ref>]`
+`git-vendor upstream <name> [<ref>]`
 
 ## DESCRIPTION
 
@@ -19,7 +19,7 @@ git-vendor(1) -- manage vendored dependency subtrees
 
   `git-vendor` follows the same vendoring pattern that is used in the Go community. Dependencies are stored under `vendor/<repository_uri>`. For example, the dependency of `https://github.com/brettlangdon/forge.git` will be stored under `vendor/github.com/brettlangdon/forge` by default.
 
-  `git-vendor` is unable to `list`, `update` or `push` any dependencies it has not added, the reason is that `git-vendor` adds special commit messages so that it can track existing dependencies.
+  `git-vendor` is unable to `list`, `update` or `upstream` any dependencies it has not added, the reason is that `git-vendor` adds special commit messages so that it can track existing dependencies.
 
 ## COMMANDS
 
@@ -39,7 +39,7 @@ git-vendor(1) -- manage vendored dependency subtrees
 
   Update the vendored dependency to a different version.
 
-  push &lt;dir&gt; &lt;ref&gt;
+  upstream &lt;dir&gt; &lt;ref&gt;
 
   Push the vendored dependency changes to the source repository.
 
@@ -80,13 +80,21 @@ git-vendor(1) -- manage vendored dependency subtrees
 
     $ git vendor update forge
 
-  Pushing changes to the source repository to `master`:
+  Upstream changes to the source repository to `master`:
 
-    $ git vendor push forge
+    $ git vendor upstream forge
 
-  Pushing changes to the source repository to a (new) branch my_changes:
+  Upstream changes to the source repository to a (new) branch my_changes:
 
-    $ git vendor push forge my_changes
+    $ git vendor upstream forge my_changes
+
+  Upstream changes to another repository to `master`:
+
+    $ git vendor upstream forge --repo https://github.com/user/another.git
+
+  Upstream changes to another repository to a (new) branch my_changes:
+
+    $ git vendor upstream forge my_changes --repo https://github.com/user/another.git
 
   Removing a dependency:
 
