@@ -253,7 +253,7 @@ cmd_upstream()
 
             if [ ! -z "$repository_arg" ];
             then
-                # override the reposition read from the commit logs
+                # override the repository read from the commit logs
                 # with the one read from the command line arguments
                 repository=$repository_arg
             fi
