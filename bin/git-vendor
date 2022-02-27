@@ -255,7 +255,7 @@ cmd_upstream()
             then
                 # override the repository read from the commit logs
                 # with the one read from the command line arguments
-                repository=$repository_arg
+                repository="$repository_arg"
             fi
             
             if [ ! -z "$repository" ];
