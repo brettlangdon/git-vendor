@@ -18,6 +18,7 @@ See https://brettlangdon.github.io/git-vendor for the current MAN page documenta
 * `git vendor add [--prefix <dir>] <name> <repository> [<ref>]` - add a new vendored dependency.
 * `git vendor list [<name>]` - list current vendored dependencies, their source, and current vendored ref.
 * `git vendor update <name> [<ref>]` - update a vendored dependency.
+* `git vendor upstream <name> [<ref>] [--repo <repository>]` - share with the upstream vendored dependency.
 
 ## Installation
 Manually:
