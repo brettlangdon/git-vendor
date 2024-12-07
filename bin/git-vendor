@@ -41,7 +41,7 @@ fi
 # Simulate an associative array (for older versions of bash)
 var_name()
 {
-    printf "name_$1" | tr -c '[A-Za-z0-9]' '_'
+    echo "name_$1" | tr -c '[A-Za-z0-9]' '_'
 }
 
 vendor_names_from_log()
@@ -138,12 +138,12 @@ cmd_list()
                         if [ ! -z "$repository" ];
                         then
                             if [ -z "$showOnly" -o "$showOnly" = "$name" ]; then
-                                printf "$name@$ref:\n"
-                                printf "\tname:\t$name\n"
-                                printf "\tdir:\t$dir\n"
-                                printf "\trepo:\t$repository\n"
-                                printf "\tref:\t$ref\n"
-                                printf "\tcommit:\t$commit\n"
+				printf "%s@%s:\n" "$name" "$ref"
+				printf "\tname:\t%s\n" "$name"
+				printf "\tdir:\t%s\n" "$dir"
+				printf "\trepo:\t%s\n" "$repository"
+				printf "\tref:\t%s\n" "$ref"
+				printf "\tcommit:\t%s\n" "$commit"
                                 printf "\n"
                             fi
                         fi
