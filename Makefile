@@ -13,6 +13,11 @@ COMMANDS = $(subst bin/, , $(BINS))
 
 default: install
 
+PYTHON ?= python3
+
+test:
+	$(PYTHON) -m unittest discover -s tests -v
+
 docs: $(MAN_HTML) $(MAN_PAGES)
 
 install:
@@ -76,4 +81,4 @@ docclean:
 	rm -f man/*.1
 	rm -f man/*.html
 
-.PHONY: default docs clean docclean install uninstall
+.PHONY: default docs clean docclean install uninstall test

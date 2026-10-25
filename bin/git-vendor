@@ -38,50 +38,60 @@ if [ "$1" = "--prefix" ]; then
     shift; shift
 fi
 
-# Simulate an associative array (for older versions of bash)
-var_name()
-{
-    printf "name_$1" | tr -c '[A-Za-z0-9]' '_'
-}
-
+# Vendored dependencies are recorded in commit messages, newest first. A
+# removed tree has no directory, and a re-added tree uses its newest name.
 vendor_names_from_log()
 {
     name=
     dir=
     git log --grep="^git-vendor-name: .*\$" \
 	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
-	while read a b junk; do
+	while read -r a b junk; do
 	    case "$a" in
 		START) ;;
 		git-vendor-name:) name="$b" ;;
                 git-vendor-dir:) dir="$b" ;;
 		END)
-                    # Only consider dependencies which still exist on disk
-                    # and haven't been renamed
-                    eval `printf val='$'$(var_name "$dir")`
-                    if [ -d "$dir" -a -z "$val" ]; then
-                        echo "$name"
-                        eval `printf $(var_name "$dir")=1`
+                    # Keep the directory as the key, rather than replacing
+                    # punctuation: foo-bar and foo_bar are different trees.
+                    # Commits arrive newest first, so awk keeps the current
+                    # name if a tree was removed and added again.
+                    if [ -d "$dir" ]; then
+                        printf '%s\t%s\n' "$dir" "$name"
                     fi
                     name=
                     dir=
                     ;;
 	    esac
-	done | sort -u
+	done | awk -F '\t' '!seen[$1]++ { print $2 }' | sort -u
+}
+
+vendor_git_log_from_metadata()
+{
+    key="$1"
+    value="$2"
+    # Git's fixed-string grep finds candidates, but it also matches prefixes
+    # such as "foo" in "foobar". Check the complete metadata line and return
+    # the newest exact match. No match produces empty output for callers.
+    git log --fixed-strings --grep="$key: $value" --format='%H' HEAD |
+        while read -r commit; do
+            if git show -s --format=%B "$commit" | grep -F -x -e "$key: $value" >/dev/null; then
+                git show -s --format='START %H%n%s%n%n%b%nEND%n' "$commit"
+                break
+            fi
+        done
 }
 
 vendor_git_log_from_name()
 {
-    name="$1"
-    git log -1 --grep="^git-vendor-name: $name\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD
+    vendor_git_log_from_metadata git-vendor-name "$1"
 }
 
 vendor_name_from_dir()
 {
     name=
-    dir="$1"
-    git log -1 --grep="^git-vendor-dir: $dir\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
-        while read a b junk; do
+    vendor_git_log_from_metadata git-vendor-dir "$1" |
+        while read -r a b junk; do
             case "$a" in
                 git-vendor-name:) name="$b" ;;
                 END)
@@ -107,6 +117,15 @@ cmd_add()
     then
         die "Incorrect options provided: git vendor add <name> <repository> [<ref>]"
     fi
+    # The log readers split metadata on whitespace, and backslashes do not
+    # round-trip reliably through git-subtree's commit message handling.
+    case "$name" in
+        ""|*[[:space:]]*|*'\'*) die "Dependency name must not be empty or contain whitespace or backslashes" ;;
+    esac
+    # Check only active names; a name can be reused after its tree is removed.
+    if vendor_names_from_log | grep -F -x -e "$name" >/dev/null; then
+        die "Dependency \"$name\" already exists"
+    fi
 
     dir="$prefix/$(echo "$repository" | sed -E 's/^[a-zA-Z]+((:\/\/)|@)//' | sed 's/:/\//' | sed -E 's/\.git$//')"
     message="\
@@ -127,7 +146,7 @@ cmd_list()
     for name in $(vendor_names_from_log);
     do
         vendor_git_log_from_name "$name" |
-	    while read a b junk; do
+	    while read -r a b junk; do
 	        case "$a" in
 		    START) commit="$b" ;;
                     git-vendor-name:) name="$b" ;;
@@ -138,13 +157,13 @@ cmd_list()
                         if [ ! -z "$repository" ];
                         then
                             if [ -z "$showOnly" -o "$showOnly" = "$name" ]; then
-                                printf "$name@$ref:\n"
-                                printf "\tname:\t$name\n"
-                                printf "\tdir:\t$dir\n"
-                                printf "\trepo:\t$repository\n"
-                                printf "\tref:\t$ref\n"
-                                printf "\tcommit:\t$commit\n"
-                                printf "\n"
+                                # Metadata is data, never a printf format.
+                                printf '%s@%s:\n' "$name" "$ref"
+                                printf '\tname:\t%s\n' "$name"
+                                printf '\tdir:\t%s\n' "$dir"
+                                printf '\trepo:\t%s\n' "$repository"
+                                printf '\tref:\t%s\n' "$ref"
+                                printf '\tcommit:\t%s\n\n' "$commit"
                             fi
                         fi
                         name=
@@ -170,8 +189,15 @@ cmd_update()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor update <name> [<ref>]"
     fi
-    vendor_git_log_from_name "$name" |
-	while read a b junk; do
+    log=$(vendor_git_log_from_name "$name")
+    if [ -z "$log" ]; then
+        die "Unknown dependency \"$name\""
+    fi
+    # Git log exits successfully even without a match, hence the check above.
+    # This reader is the last pipeline command: exit propagates a Git failure,
+    # while break would make the pipeline report success.
+    printf '%s\n' "$log" |
+	while read -r a b junk; do
 	    case "$a" in
 		START) ;;
                 git-vendor-dir:) dir="$b" ;;
@@ -199,9 +225,11 @@ git-vendor-dir: $dir
 git-vendor-repository: $repository
 git-vendor-ref: $ref
 "
-                        git fetch "$repository" "$curr_ref"
-                        git subtree pull --prefix "$dir" --message "$message" "$repository" "$ref" --squash
+                        git fetch "$repository" "$curr_ref" || exit $?
+                        git subtree pull --prefix "$dir" --message "$message" "$repository" "$ref" --squash || exit $?
                         break
+                    else
+                        die "Dependency \"$name\" has no repository"
                     fi
                     ;;
 	    esac
@@ -211,9 +239,16 @@ git-vendor-ref: $ref
 cmd_upstream()
 {
     require_clean_work_tree
+    # POSIX sh has no portable local variables; clear optional arguments here.
+    name=
+    ref=
+    repository_arg=
     while [ $# -gt 0 ] ; do
         case $1 in
             --repo)
+            if [ $# -lt 2 ]; then
+                die "Missing repository after --repo"
+            fi
             repository_arg="$2"
             shift # argument value
             ;;
@@ -233,8 +268,12 @@ cmd_upstream()
     if [ -z "$ref" ]; then
         ref="master"
     fi
-    vendor_git_log_from_name "$name" |
-    while read a b junk; do
+    log=$(vendor_git_log_from_name "$name")
+    if [ -z "$log" ]; then
+        die "Unknown dependency \"$name\""
+    fi
+    printf '%s\n' "$log" |
+    while read -r a b junk; do
         case "$a" in
         START) ;;
         git-vendor-dir:) dir="$b" ;;
@@ -260,8 +299,11 @@ cmd_upstream()
             
             if [ ! -z "$repository" ];
             then
-                git subtree push --prefix "$dir" "$repository" "$ref"
+                # Exit the pipeline reader on failure before break masks it.
+                git subtree push --prefix "$dir" "$repository" "$ref" || exit $?
                 break
+            else
+                die "Dependency \"$name\" has no repository"
             fi
             ;;
         esac
@@ -275,8 +317,12 @@ cmd_remove()
     if [ $# -lt 1 ]; then
         die "Incorrect options provided: git vendor remove <name>"
     fi
-    vendor_git_log_from_name "$name" |
-	while read a b junk; do
+    log=$(vendor_git_log_from_name "$name")
+    if [ -z "$log" ]; then
+        die "Unknown dependency \"$name\""
+    fi
+    printf '%s\n' "$log" |
+	while read -r a b junk; do
 	    case "$a" in
 		START) ;;
                 git-vendor-dir:) dir="$b" ;;
@@ -291,8 +337,10 @@ cmd_remove()
                         die "Dependency \"$1\" was renamed \"$logname\""
                     fi
 
-                    git rm -rf "$dir"
-                    git commit --message "Removing \"$name\" from \"$dir\""
+                    # Report either failure; a rejected commit can leave the
+                    # removed files staged for the caller to resolve.
+                    git rm -rf "$dir" || exit $?
+                    git commit --message "Removing \"$name\" from \"$dir\"" || exit $?
                     break
                     ;;
 	    esac
